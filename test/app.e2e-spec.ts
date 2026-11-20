@@ -3,6 +3,14 @@ import { Project } from '../src/projects/projects.entity';
 import { INestApplication } from '@nestjs/common';
 import { api, createDatabaseTestApp } from './database-test-app';
 
+function expectIsoDate(value: unknown): void {
+  expect(typeof value).toBe('string');
+  expect(value).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  const date = new Date(value as string);
+  expect(Number.isNaN(date.getTime())).toBe(false);
+  expect(date.toISOString()).toBe(value);
+}
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
@@ -22,6 +30,7 @@ describe('AppController (e2e)', () => {
       .post('/projects')
       .send({ name: 'Test Project', description: 'A test project' })
       .expect(201);
+    expectIsoDate(createResponse.body.createdAt);
     const projectId = createResponse.body.id;
 
     return api(app)
@@ -30,6 +39,8 @@ describe('AppController (e2e)', () => {
       .expect((res) => {
         expect(res.body.name).toBe('Test Project');
         expect(res.body.description).toBe('A test project');
+        expectIsoDate(res.body.createdAt);
+        expect(res.body.createdAt).toBe(createResponse.body.createdAt);
       });
   });
 
@@ -38,6 +49,7 @@ describe('AppController (e2e)', () => {
       .post('/projects')
       .send({ name: 'Test Project', description: 'A test project' })
       .expect(201);
+    expectIsoDate(createResponse.body.createdAt);
     const projectId = createResponse.body.id;
 
     return api(app)
@@ -46,6 +58,8 @@ describe('AppController (e2e)', () => {
       .expect((res) => {
         expect(res.body.name).toBe('Test Project');
         expect(res.body.description).toBe('A test project');
+        expectIsoDate(res.body.createdAt);
+        expect(res.body.createdAt).toBe(createResponse.body.createdAt);
       });
   });
 
