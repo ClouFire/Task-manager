@@ -1,5 +1,8 @@
 # Local production and staging databases
 
+For the complete first-run sequence (empty database, migrations, API startup),
+see the [main README](../README.md#запуск-с-пустой-базой).
+
 Start both PostgreSQL 17 containers:
 
 ```bash
@@ -100,8 +103,8 @@ npm run start:stage            # http://localhost:3001
 ```
 
 `npm run start:local` defaults to staging. Each command sets `DATABASE_URL`
-for its process; the accounting, inventory, and profiles services all use that
-connection. No service-specific database changes are needed.
+for its process. Apply migrations to the selected database before starting the API,
+as described in the [main README](../README.md#запуск-с-пустой-базой).
 
 Run API tests against the dedicated `nest_test` database on staging:
 
@@ -109,9 +112,11 @@ Run API tests against the dedicated `nest_test` database on staging:
 npm run test:e2e:local
 ```
 
-The suite creates and removes an isolated schema for every test. It covers all
-API routes, validation, accounting postings, persistence, concurrent stock
-issues, and transaction rollback. Run unit tests with `npm test -- --runInBand`.
+The suite creates an isolated empty database for every test, applies migrations
+with schema synchronization disabled, and removes the database afterwards.
+It checks project creation, retrieval, validation, and persistence. The test user
+needs `CREATEDB` privileges and permission to install `uuid-ossp`.
+Run unit tests with `npm test -- --runInBand`.
 
 `npm run db:down` stops both containers and preserves their data volumes.
 The original production service and volume names are retained so existing

@@ -1,57 +1,143 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Task Manager API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API для создания и получения проектов на NestJS и PostgreSQL. Ниже описан
+полный локальный запуск: создание базы, применение миграций и проверка API.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Требования
 
-## Description
+- Node.js 24 и npm.
+- Docker с Docker Compose.
+- GNU Make для команд из [Makefile](./Makefile).
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Все команды выполняются из корня репозитория.
 
-## Project setup
+## Запуск с пустой базой
+
+### 1. Установить зависимости и подготовить окружение
 
 ```bash
-$ npm install
+npm ci
 ```
 
-## Database migrations and API checks
+Если файла `.env` ещё нет, создай его из примера:
 
-Start the local test PostgreSQL service and run:
+```bash
+cp .env.example .env
+```
+
+Существующий `.env` перезаписывать не нужно. Для этого сценария укажи в нём:
+
+```dotenv
+DATABASE_URL=postgresql://nest:nest@127.0.0.1:5432/nest
+```
+
+Пример [.env.example](./.env.example) по умолчанию указывает на staging;
+здесь используется отдельная локальная база `nest`.
+
+### 2. Запустить PostgreSQL
+
+```bash
+docker compose up -d --wait postgres
+```
+
+При первом запуске с новым томом контейнер создаст пустую базу `nest`
+с пользователем и паролем `nest`. Если том уже существует, сохранятся его
+данные: эта команда не очищает базу.
+
+### 3. Применить миграции
+
+```bash
+DATABASE_URL=postgresql://nest:nest@127.0.0.1:5432/nest make migration-run
+DATABASE_URL=postgresql://nest:nest@127.0.0.1:5432/nest make migration-status
+```
+
+В статусе все миграции должны быть отмечены `[X]`. Явный `DATABASE_URL`
+гарантирует, что команды используют ту же базу, что и API в следующем шаге.
+Схема создаётся миграциями из [src/migrations](./src/migrations): автоматическая
+синхронизация отключена. После получения новых миграций повтори `migration-run`
+перед запуском API; уже применённые миграции повторно не выполняются.
+
+### 4. Запустить API
+
+```bash
+PORT=3000 npm run start:production:local
+```
+
+Это локальный запуск в режиме watch с подключением к базе `nest`, а не
+развёртывание в production. Дождись сообщения `Nest application successfully started`.
+Оставь этот терминал открытым.
+
+### 5. Создать и получить проект
+
+В другом терминале:
+
+```bash
+make project-create PORT=3000
+```
+
+Ожидается HTTP `201` и JSON с `id`, `name`, `description` и `createdAt`.
+Подставь полученный `id` в запрос:
+
+```bash
+curl -i http://localhost:3000/projects/ВСТАВЬ_UUID_ИЗ_ОТВЕТА
+```
+
+Ожидается HTTP `200` с созданным проектом. Порт `3000` относится к HTTP API,
+порт `5432` — к PostgreSQL. При ошибке подключения к `3000` проверь, что API
+запущен и не завершился с ошибкой.
+
+## Остановка и сохранность данных
+
+API останавливается через `Ctrl+C`. Для остановки базы:
+
+```bash
+docker compose stop postgres
+```
+
+Данные сохраняются в именованном томе `postgres_data`, подключённом в
+[docker-compose.yaml](./docker-compose.yaml). Перезапуск API и пересоздание
+контейнера с тем же томом не очищают базу. `docker compose down` также
+сохраняет тома; `docker compose down -v` удаляет их вместе с данными.
+
+## Staging и инфраструктура
+
+Подробности о двух окружениях, портах, томах и ежедневном копировании данных
+описаны в [docker/README.md](./docker/README.md).
+
+`npm run start:local` запускает API для staging на порту `3001`.
+`npm run db:up` включает сервис `stage-refresh`, который заменяет данные
+staging копией базы `nest`. Для обычной работы с постоянными локальными
+данными используй последовательность запуска выше: она не включает обновление staging.
+
+## Проверки и CI
+
+Unit-тесты, сборка и lint:
+
+```bash
+npm test -- --runInBand
+npm run build
+npm run lint
+```
+
+Воспроизводимая проверка миграций с нуля и работы API:
 
 ```bash
 docker compose up -d --wait postgres-stage
 make test-e2e-migrations
 ```
 
-Each e2e test creates a uniquely named empty database, applies all migrations
-from `src/migrations`, and then checks the API without TypeORM schema synchronization.
-The temporary database is removed after the test, including failed tests.
-The existing `nest_test`, `nest_stage` and `nest` databases are not reset.
+Каждый e2e-тест создаёт отдельную пустую базу из `template0`, применяет все
+миграции и проверяет API с `synchronize: false`. После теста временная база
+удаляется, в том числе при ошибке. Базы `nest`, `nest_stage` и `nest_test`
+не очищаются. Если миграция не применяется, тест падает до API-запросов.
 
-The PostgreSQL user must have `CREATEDB` privileges and permission to install
-`uuid-ossp` (used by the UUID column). The local Docker and CI users meet these
-requirements. To use another dedicated test server:
+Тестовому пользователю PostgreSQL нужны право `CREATEDB` и разрешение на
+установку `uuid-ossp`. Локальные Docker-пользователи и пользователь CI
+имеют необходимые права. Для другого тестового сервера:
 
 ```bash
 TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nest_test npm run test:e2e -- --runInBand
 ```
 
-GitHub Actions runs the same e2e suite against its temporary PostgreSQL service.
-A failing migration fails the tests before API requests run.
+[GitHub Actions](./.github/workflows/ci.yml) запускает сборку, lint, unit-тесты
+и тот же e2e-набор с миграциями на временном PostgreSQL.
