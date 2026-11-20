@@ -14,7 +14,7 @@ export class ProjectsService {
   create(dto: CreateProjectDto): Promise<Project> {
     const project = this.projectRepository.create({
       name: dto.name,
-      description: dto.description ?? null,
+      description: dto.description === '' ? null : (dto.description ?? null),
     });
 
     return this.projectRepository.save(project);

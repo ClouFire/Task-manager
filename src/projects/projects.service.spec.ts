@@ -35,23 +35,26 @@ describe('ProjectsService', () => {
   });
 
   it.each([
-    { name: 'Project' },
-    { name: 'Project', description: null },
-    { name: 'Project', description: '' },
-    { name: 'Project', description: 'Description' },
-  ])('normalizes an omitted description without changing strings: %j', async (dto) => {
-    const expected = {
-      name: dto.name,
-      description: dto.description ?? null,
-    };
-    const project = Object.assign(new Project(), expected);
-    repository.create.mockReturnValue(project);
-    repository.save.mockResolvedValue(project);
+    [{ name: 'Project' }, null],
+    [{ name: 'Project', description: null }, null],
+    [{ name: 'Project', description: '' }, null],
+    [{ name: 'Project', description: 'Description' }, 'Description'],
+  ])(
+    'normalizes empty descriptions and preserves text: %j',
+    async (dto, description) => {
+      const expected = {
+        name: dto.name,
+        description,
+      };
+      const project = Object.assign(new Project(), expected);
+      repository.create.mockReturnValue(project);
+      repository.save.mockResolvedValue(project);
 
-    const result = await service.create(dto);
+      const result = await service.create(dto);
 
-    expect(repository.create).toHaveBeenCalledWith(expected);
-    expect(repository.save).toHaveBeenCalledWith(project);
-    expect(result.description).toBe(expected.description);
-  });
+      expect(repository.create).toHaveBeenCalledWith(expected);
+      expect(repository.save).toHaveBeenCalledWith(project);
+      expect(result.description).toBe(expected.description);
+    },
+  );
 });

@@ -63,6 +63,26 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/projects (POST) - stores an empty description as NULL', async () => {
+    const response = await api(app)
+      .post('/projects')
+      .send({ name: 'Test Project', description: '' })
+      .expect(201);
+
+    expect(response.body.description).toBeNull();
+    const project = await app
+      .get(DataSource)
+      .getRepository(Project)
+      .findOneByOrFail({ id: response.body.id });
+    expect(project.description).toBeNull();
+    await api(app)
+      .get(`/projects/${response.body.id}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.description).toBeNull();
+      });
+  });
+
   it('/projects/:id (GET) - Not Found', () => {
     return api(app)
       .get('/projects/00000000-0000-0000-0000-000000000000')
