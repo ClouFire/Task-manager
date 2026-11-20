@@ -75,7 +75,7 @@ export async function createDatabaseTestApp(
     }).compile();
     
     app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     
     await app.init();
     

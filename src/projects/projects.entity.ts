@@ -25,7 +25,6 @@ export class Project {
     })
     description: string | null;
 
-    @Exclude({ toPlainOnly: true })
     @CreateDateColumn({ type: 'timestamptz'})
     createdAt: Date;
 
