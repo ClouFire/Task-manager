@@ -52,5 +52,5 @@ jobs:
       - name: Unit tests
         run: npm test -- --runInBand
 
-      - name: E2E tests
+      - name: Migrations from an empty database and E2E tests
         run: npm run test:e2e -- --runInBand

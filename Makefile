@@ -1,6 +1,6 @@
 PORT ?= 3000
 
-.PHONY: project-create
+.PHONY: project-create test-all test-e2e-migrations
 
 
 migration-generate:
@@ -25,3 +25,7 @@ project-get:
 
 test-all:
 	npm test -- --runInBand && npm run test:e2e:local
+
+# Creates an isolated empty database, applies migrations, then tests the API.
+test-e2e-migrations:
+	npm run test:e2e:local

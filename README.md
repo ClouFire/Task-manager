@@ -30,3 +30,28 @@
 ```bash
 $ npm install
 ```
+
+## Database migrations and API checks
+
+Start the local test PostgreSQL service and run:
+
+```bash
+docker compose up -d --wait postgres-stage
+make test-e2e-migrations
+```
+
+Each e2e test creates a uniquely named empty database, applies all migrations
+from `src/migrations`, and then checks the API without TypeORM schema synchronization.
+The temporary database is removed after the test, including failed tests.
+The existing `nest_test`, `nest_stage` and `nest` databases are not reset.
+
+The PostgreSQL user must have `CREATEDB` privileges and permission to install
+`uuid-ossp` (used by the UUID column). The local Docker and CI users meet these
+requirements. To use another dedicated test server:
+
+```bash
+TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nest_test npm run test:e2e -- --runInBand
+```
+
+GitHub Actions runs the same e2e suite against its temporary PostgreSQL service.
+A failing migration fails the tests before API requests run.
