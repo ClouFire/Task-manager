@@ -126,6 +126,15 @@ describe('AppController (e2e)', () => {
     return api(app).get('/projects/invalid-uuid').expect(400);
   });
 
+  it('/projects (POST) - Trimming whitespace from name', async () => {
+    const response = await api(app)
+      .post('/projects')
+      .send({ name: '   Test Project   ', description: 'A test project' })
+      .expect(201);
+
+    expect(response.body.name).toBe('Test Project');
+  });
+
   afterEach(async () => {
     await cleanup?.();
   });
