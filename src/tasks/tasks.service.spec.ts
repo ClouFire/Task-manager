@@ -206,7 +206,7 @@ describe('TasksService combined update', () => {
         id,
         title: 'Old',
         description: 'Old description',
-        status: 'todo',
+        status: 'TODO',
       });
       const transactionalRepository = {
         findOne: jest.fn().mockResolvedValue(task),
@@ -257,13 +257,13 @@ describe('TasksService combined update', () => {
         expect(transactionalRepository.update).toHaveBeenCalledWith(id, {
           title: 'New',
           description: null,
-          status: 'done',
+          status: 'DONE',
         });
         expect(result).toMatchObject({
           id,
           title: 'New',
           description: null,
-          status: 'done',
+          status: 'DONE',
         });
         expect(transactionalRepository.findOneByOrFail).toHaveBeenCalledWith({
           id,

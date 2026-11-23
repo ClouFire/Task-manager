@@ -46,7 +46,7 @@ describe('Tasks (e2e, PostgreSQL)', () => {
       projectId,
       title: 'Task',
       description: 'Description',
-      status: 'todo',
+      status: 'TODO',
     });
     expect(task.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(new Date(task.createdAt).toISOString()).toBe(task.createdAt);
@@ -143,7 +143,7 @@ describe('Tasks (e2e, PostgreSQL)', () => {
         {
           title: task.title,
           description: task.description,
-          status: status.toLowerCase(),
+          status: status.toUpperCase(),
         },
       );
     },

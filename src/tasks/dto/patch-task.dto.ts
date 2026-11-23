@@ -8,7 +8,6 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { TaskStatus } from '../task-status.enum';
-import { Task } from '../task.entity';
 
 export class PatchTaskDto {
   @Transform(
@@ -27,7 +26,7 @@ export class PatchTaskDto {
   description?: string | null;
 
   @Transform(
-    ({ value }) => (typeof value === 'string' ? value.toLowerCase() : value),
+    ({ value }) => (typeof value === 'string' ? value.toUpperCase() : value),
     { toClassOnly: true },
   )
   @ValidateIf((_, value) => value !== undefined)
