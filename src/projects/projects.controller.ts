@@ -4,7 +4,6 @@ import {
     Body, 
     Param, 
     Get, 
-    BadRequestException, 
     NotFoundException, 
     ParseUUIDPipe,
     ClassSerializerInterceptor,
@@ -16,7 +15,9 @@ import { Project } from './projects.entity';
 
 @Controller('projects')
 export class ProjectsController {
-    constructor(private readonly projectsService: ProjectsService) {}
+    constructor(
+        private readonly projectsService: ProjectsService,
+    ) {}
 
     @Post()
     async createProject(@Body() projectData: CreateProjectDto): Promise<Project> {
