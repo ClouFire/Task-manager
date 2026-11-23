@@ -1,3 +1,4 @@
+import { TaskStatus } from './task-status.enum';
 import { QueryFailedError } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
@@ -206,20 +207,18 @@ describe('TasksService combined update', () => {
         id,
         title: 'Old',
         description: 'Old description',
-        status: 'TODO',
+        status: TaskStatus.TODO,
       });
       const transactionalRepository = {
         findOne: jest.fn().mockResolvedValue(task),
         update: jest.fn().mockResolvedValue({ affected: 1 }),
-        findOneByOrFail: jest
-          .fn()
-          .mockResolvedValue(
-            Object.assign(new Task(), task, {
-              title: 'New',
-              description: null,
-              status: 'done',
-            }),
-          ),
+        findOneByOrFail: jest.fn().mockResolvedValue(
+          Object.assign(new Task(), task, {
+            title: 'New',
+            description: null,
+            status: TaskStatus.DONE,
+          }),
+        ),
       };
       const getRepository = jest.fn().mockReturnValue(transactionalRepository);
       const transaction = jest.fn(async (callback) =>
@@ -242,7 +241,7 @@ describe('TasksService combined update', () => {
               id,
               title: 'New',
               description: '   ',
-              status: 'done' as Task['status'],
+              status: TaskStatus.DONE as Task['status'],
             }
           : { id },
       );
@@ -257,13 +256,13 @@ describe('TasksService combined update', () => {
         expect(transactionalRepository.update).toHaveBeenCalledWith(id, {
           title: 'New',
           description: null,
-          status: 'DONE',
+          status: TaskStatus.DONE,
         });
         expect(result).toMatchObject({
           id,
           title: 'New',
           description: null,
-          status: 'DONE',
+          status: TaskStatus.DONE,
         });
         expect(transactionalRepository.findOneByOrFail).toHaveBeenCalledWith({
           id,

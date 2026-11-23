@@ -1,3 +1,4 @@
+import { TaskStatus } from '../src/tasks/task-status.enum';
 import { randomUUID } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -46,7 +47,7 @@ describe('Tasks (e2e, PostgreSQL)', () => {
       projectId,
       title: 'Task',
       description: 'Description',
-      status: 'TODO',
+      status: TaskStatus.TODO,
     });
     expect(task.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(new Date(task.createdAt).toISOString()).toBe(task.createdAt);
@@ -123,18 +124,18 @@ describe('Tasks (e2e, PostgreSQL)', () => {
       id: task.id,
       title: 'New',
       description: null,
-      status: 'done',
+      status: TaskStatus.DONE,
     });
     const fetched = await api(app).get(`/tasks/${task.id}`).expect(200);
     expect(response.body).toEqual(fetched.body);
     expect(await repository().findOneByOrFail({ id: task.id })).toMatchObject({
       title: 'New',
       description: null,
-      status: 'done',
+      status: TaskStatus.DONE,
     });
   });
 
-  it.each(['TODO', 'In_Progress', 'DONE'])(
+  it.each(['todo', 'In_Progress', 'DONE'])(
     'normalizes status %s and preserves omitted fields',
     async (status) => {
       const task = await create();
@@ -251,8 +252,8 @@ describe('Tasks (e2e, PostgreSQL)', () => {
       ),
     );
     expect(responses.map((response) => response.body.status).sort()).toEqual([
-      'done',
-      'in_progress',
+      TaskStatus.DONE,
+      TaskStatus.IN_PROGRESS,
     ]);
     for (const response of responses) {
       expect(response.body).toMatchObject({
@@ -261,7 +262,7 @@ describe('Tasks (e2e, PostgreSQL)', () => {
         description: task.description,
       });
     }
-    expect(['done', 'in_progress']).toContain(
+    expect([TaskStatus.DONE, TaskStatus.IN_PROGRESS]).toContain(
       (await repository().findOneByOrFail({ id: task.id })).status,
     );
   });
