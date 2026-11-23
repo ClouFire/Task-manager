@@ -15,6 +15,7 @@ import {
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { PatchTaskDto } from './dto/patch-task.dto';
+import { Task } from './task.entity';
 
 @Controller('tasks')
 export class TasksController {
@@ -36,7 +37,7 @@ export class TasksController {
   async update(
     @Body() patchTaskDto: PatchTaskDto,
     @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  ): Promise<Task> {
     return this.tasksService.update({ ...patchTaskDto, id });
   }
 
