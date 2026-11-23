@@ -4,14 +4,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProjectsModule } from './projects/projects.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TaskModule } from './task/task.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -25,7 +25,7 @@ import { TaskModule } from './task/task.module';
 
     ProjectsModule,
 
-    TaskModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

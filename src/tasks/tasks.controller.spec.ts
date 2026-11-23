@@ -1,31 +1,21 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { TaskController } from './task.controller';
-import { TaskService } from './task.service';
+import { TasksController } from './tasks.controller';
+import { TasksService } from './tasks.service';
 import { Task } from './task.entity';
 
-describe('TaskController', () => {
-  let controller: TaskController;
+describe('TasksController', () => {
+  let controller: TasksController;
   let service: { create: jest.Mock; findById: jest.Mock };
   const id = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeEach(async () => {
     service = { create: jest.fn(), findById: jest.fn() };
     const module = await Test.createTestingModule({
-      controllers: [TaskController],
-      providers: [{ provide: TaskService, useValue: service }],
+      controllers: [TasksController],
+      providers: [{ provide: TasksService, useValue: service }],
     }).compile();
-    controller = module.get(TaskController);
-  });
-
-  it('passes body and route project ID to creation and returns the saved task', async () => {
-    const task = Object.assign(new Task(), { id, title: 'Task' });
-    service.create.mockResolvedValue(task);
-    await expect(controller.create({ title: 'Task' }, id)).resolves.toBe(task);
-    expect(service.create).toHaveBeenCalledWith({
-      title: 'Task',
-      projectId: id,
-    });
+    controller = module.get(TasksController);
   });
 
   it('returns an existing task', async () => {

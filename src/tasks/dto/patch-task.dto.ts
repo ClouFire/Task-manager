@@ -1,4 +1,11 @@
-import { IsString, IsOptional, MaxLength, MinLength, IsEnum, ValidateIf } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MaxLength,
+  MinLength,
+  IsEnum,
+  ValidateIf,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { TaskStatus } from '../task-status.enum';
 import { Task } from '../task.entity';
@@ -21,5 +28,5 @@ export class PatchTaskDto {
 
   @ValidateIf((_, value) => value !== undefined)
   @IsEnum(TaskStatus)
-  status?: TaskStatus
+  status?: TaskStatus;
 }

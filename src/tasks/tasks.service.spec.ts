@@ -1,13 +1,13 @@
 import { QueryFailedError } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TaskService } from './task.service';
+import { TasksService } from './tasks.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { ProjectsService } from '../projects/projects.service';
 
-describe('TaskService', () => {
-  let service: TaskService;
+describe('TasksService', () => {
+  let service: TasksService;
   let repository: {
     create: jest.Mock;
     save: jest.Mock;
@@ -27,13 +27,13 @@ describe('TaskService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TaskService,
+        TasksService,
         { provide: getRepositoryToken(Task), useValue: repository },
         { provide: ProjectsService, useValue: projectsService },
       ],
     }).compile();
 
-    service = module.get<TaskService>(TaskService);
+    service = module.get<TasksService>(TasksService);
   });
 
   it('should be defined', () => {

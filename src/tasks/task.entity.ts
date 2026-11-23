@@ -10,7 +10,7 @@ import {
 import { TaskStatus } from './task-status.enum';
 import { Project } from '../projects/projects.entity';
 
-@Entity('task')
+@Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;

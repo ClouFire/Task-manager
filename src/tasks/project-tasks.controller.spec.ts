@@ -1,19 +1,19 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
-import { ProjectsTaskController } from './projects.task.controller';
-import { TaskService } from './task.service';
+import { ProjectTasksController } from './project-tasks.controller';
+import { TasksService } from './tasks.service';
 
-describe('ProjectsTaskController (HTTP)', () => {
+describe('ProjectTasksController (HTTP)', () => {
   let app: INestApplication;
-  let service: { findByProject: jest.Mock };
+  let service: { findByProject: jest.Mock; create: jest.Mock };
   const projectId = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeEach(async () => {
-    service = { findByProject: jest.fn() };
+    service = { findByProject: jest.fn(), create: jest.fn() };
     const module = await Test.createTestingModule({
-      controllers: [ProjectsTaskController],
-      providers: [{ provide: TaskService, useValue: service }],
+      controllers: [ProjectTasksController],
+      providers: [{ provide: TasksService, useValue: service }],
     }).compile();
     app = module.createNestApplication();
     await app.init();
@@ -58,5 +58,15 @@ describe('ProjectsTaskController (HTTP)', () => {
     await request(app.getHttpServer())
       .get(`/projects/${projectId}/tasks`)
       .expect(404);
+  });
+  it('creates a task at the project tasks URL', async () => {
+    const task = { id: 'task-id', projectId, title: 'Task' };
+    service.create.mockResolvedValue(task);
+    await request(app.getHttpServer())
+      .post(`/projects/${projectId}/tasks`)
+      .send({ title: 'Task' })
+      .expect(201)
+      .expect(task);
+    expect(service.create).toHaveBeenCalledWith({ title: 'Task', projectId });
   });
 });
