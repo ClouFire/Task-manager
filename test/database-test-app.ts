@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
+import { TasksModule } from '../src/tasks/tasks.module';
 import { ProjectsModule } from '../src/projects/projects.module';
 
 export const TEST_MASTER_API_KEY =
@@ -78,6 +79,7 @@ export async function createDatabaseTestApp() {
           retryAttempts: 1,
         }),
         ProjectsModule,
+        TasksModule,
       ],
       controllers: [AppController],
       providers: [AppService],

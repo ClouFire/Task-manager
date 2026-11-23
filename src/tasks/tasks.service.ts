@@ -11,7 +11,6 @@ import { Task } from './task.entity';
 import { Repository, QueryFailedError } from 'typeorm';
 import { ProjectsService } from '../projects/projects.service';
 import { PatchTaskDto } from './dto/patch-task.dto';
-import { UpdateResult } from 'typeorm/browser';
 import { TaskStatus } from './task-status.enum';
 
 @Injectable()
@@ -86,12 +85,15 @@ export class TasksService {
   }
 
   async update(dto: PatchTaskDto & { id: string }): Promise<
-    {
-      field: string;
-      affected: number;
-      oldValue: string | TaskStatus | null;
-      newValue: string | TaskStatus | null;
-    }[]
+    (
+      | {
+          field: string;
+          affected: number;
+          oldValue: string | TaskStatus | null;
+          newValue: string | TaskStatus | null;
+        }
+      | Task
+    )[]
   > {
     const input = plainToInstance(PatchTaskDto, dto);
     const errors = await validate(input);
@@ -121,60 +123,53 @@ export class TasksService {
         throw new NotFoundException('Task was not found');
       }
 
-      const results = [];
+      const changes: Partial<Pick<Task, 'title' | 'description' | 'status'>> =
+        {};
+      const results: {
+        field: string;
+        affected: number;
+        oldValue: string | null;
+        newValue: string | null;
+      }[] = [];
 
-      if (newTitle !== undefined && newTitle !== null && newTitle.trim()) {
-        const update = await repository.update(dto.id, {
-          title: newTitle,
-        });
-
-        if (update.affected !== 1) {
-          throw new NotFoundException('Task was not found');
-        }
-
+      if (newTitle !== undefined) {
+        changes.title = newTitle;
         results.push({
           field: 'title',
-          affected: update.affected,
+          affected: 1,
           oldValue: task.title,
           newValue: newTitle,
         });
       }
 
       if (newDescription !== undefined) {
-        const update = await repository.update(dto.id, {
-          description: newDescription,
-        });
-
-        if (update.affected !== 1) {
-          throw new NotFoundException('Task was not found');
-        }
-
+        changes.description = newDescription;
         results.push({
           field: 'description',
-          affected: update.affected,
+          affected: 1,
           oldValue: task.description,
           newValue: newDescription,
         });
       }
 
-      if (newStatus !== undefined && newStatus !== null) {
-        const update = await repository.update(dto.id, {
-          status: newStatus,
-        });
-
-        if (update.affected !== 1) {
-          throw new NotFoundException('Task was not found');
-        }
-
+      if (newStatus !== undefined) {
+        changes.status = newStatus;
         results.push({
           field: 'status',
-          affected: update.affected,
+          affected: 1,
           oldValue: task.status,
           newValue: newStatus,
         });
       }
 
-      return results;
+      if (results.length > 0) {
+        const update = await repository.update(dto.id, changes);
+        if (update.affected !== 1) {
+          throw new NotFoundException('Task was not found');
+        }
+      }
+
+      return [task, ...results];
     });
   }
 

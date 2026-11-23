@@ -26,6 +26,10 @@ export class PatchTaskDto {
   @MaxLength(2000)
   description?: string | null;
 
+  @Transform(
+    ({ value }) => (typeof value === 'string' ? value.toLowerCase() : value),
+    { toClassOnly: true },
+  )
   @ValidateIf((_, value) => value !== undefined)
   @IsEnum(TaskStatus)
   status?: TaskStatus;

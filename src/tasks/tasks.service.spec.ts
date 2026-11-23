@@ -196,3 +196,74 @@ describe('TasksService', () => {
     });
   });
 });
+
+describe('TasksService combined update', () => {
+  it.each([true, false])(
+    'uses at most one UPDATE (fields supplied: %s)',
+    async (supplied) => {
+      const id = '550e8400-e29b-41d4-a716-446655440000';
+      const task = Object.assign(new Task(), {
+        id,
+        title: 'Old',
+        description: 'Old description',
+        status: 'todo',
+      });
+      const transactionalRepository = {
+        findOne: jest.fn().mockResolvedValue(task),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
+      };
+      const getRepository = jest.fn().mockReturnValue(transactionalRepository);
+      const transaction = jest.fn(async (callback) =>
+        callback({ getRepository }),
+      );
+      const module = await Test.createTestingModule({
+        providers: [
+          TasksService,
+          {
+            provide: getRepositoryToken(Task),
+            useValue: { manager: { transaction } },
+          },
+          { provide: ProjectsService, useValue: {} },
+        ],
+      }).compile();
+      const service = module.get(TasksService);
+      const result = await service.update(
+        supplied
+          ? {
+              id,
+              title: 'New',
+              description: '   ',
+              status: 'done' as Task['status'],
+            }
+          : { id },
+      );
+      expect(transactionalRepository.findOne).toHaveBeenCalledWith({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      expect(transactionalRepository.update).toHaveBeenCalledTimes(
+        supplied ? 1 : 0,
+      );
+      if (supplied) {
+        expect(transactionalRepository.update).toHaveBeenCalledWith(id, {
+          title: 'New',
+          description: null,
+          status: 'done',
+        });
+        expect(result).toEqual([
+          task,
+          { field: 'title', affected: 1, oldValue: 'Old', newValue: 'New' },
+          {
+            field: 'description',
+            affected: 1,
+            oldValue: 'Old description',
+            newValue: null,
+          },
+          { field: 'status', affected: 1, oldValue: 'todo', newValue: 'done' },
+        ]);
+      } else {
+        expect(result).toEqual([task]);
+      }
+    },
+  );
+});
