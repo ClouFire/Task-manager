@@ -211,6 +211,15 @@ describe('TasksService combined update', () => {
       const transactionalRepository = {
         findOne: jest.fn().mockResolvedValue(task),
         update: jest.fn().mockResolvedValue({ affected: 1 }),
+        findOneByOrFail: jest
+          .fn()
+          .mockResolvedValue(
+            Object.assign(new Task(), task, {
+              title: 'New',
+              description: null,
+              status: 'done',
+            }),
+          ),
       };
       const getRepository = jest.fn().mockReturnValue(transactionalRepository);
       const transaction = jest.fn(async (callback) =>
@@ -250,19 +259,17 @@ describe('TasksService combined update', () => {
           description: null,
           status: 'done',
         });
-        expect(result).toEqual([
-          task,
-          { field: 'title', affected: 1, oldValue: 'Old', newValue: 'New' },
-          {
-            field: 'description',
-            affected: 1,
-            oldValue: 'Old description',
-            newValue: null,
-          },
-          { field: 'status', affected: 1, oldValue: 'todo', newValue: 'done' },
-        ]);
+        expect(result).toMatchObject({
+          id,
+          title: 'New',
+          description: null,
+          status: 'done',
+        });
+        expect(transactionalRepository.findOneByOrFail).toHaveBeenCalledWith({
+          id,
+        });
       } else {
-        expect(result).toEqual([task]);
+        expect(result).toBe(task);
       }
     },
   );

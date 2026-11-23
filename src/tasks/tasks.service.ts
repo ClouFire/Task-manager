@@ -11,7 +11,6 @@ import { Task } from './task.entity';
 import { Repository, QueryFailedError } from 'typeorm';
 import { ProjectsService } from '../projects/projects.service';
 import { PatchTaskDto } from './dto/patch-task.dto';
-import { TaskStatus } from './task-status.enum';
 
 @Injectable()
 export class TasksService {
@@ -84,17 +83,7 @@ export class TasksService {
     });
   }
 
-  async update(dto: PatchTaskDto & { id: string }): Promise<
-    (
-      | {
-          field: string;
-          affected: number;
-          oldValue: string | TaskStatus | null;
-          newValue: string | TaskStatus | null;
-        }
-      | Task
-    )[]
-  > {
+  async update(dto: PatchTaskDto & { id: string }): Promise<Task> {
     const input = plainToInstance(PatchTaskDto, dto);
     const errors = await validate(input);
 
@@ -103,6 +92,7 @@ export class TasksService {
     }
 
     const newTitle = input.title;
+    
     const newDescription =
       input.description === undefined
         ? undefined
@@ -123,53 +113,31 @@ export class TasksService {
         throw new NotFoundException('Task was not found');
       }
 
-      const changes: Partial<Pick<Task, 'title' | 'description' | 'status'>> =
-        {};
-      const results: {
-        field: string;
-        affected: number;
-        oldValue: string | null;
-        newValue: string | null;
-      }[] = [];
-
+      const changes: Partial<Pick<Task, 'title' | 'description' | 'status'>> = {};
+      
       if (newTitle !== undefined) {
         changes.title = newTitle;
-        results.push({
-          field: 'title',
-          affected: 1,
-          oldValue: task.title,
-          newValue: newTitle,
-        });
       }
 
       if (newDescription !== undefined) {
         changes.description = newDescription;
-        results.push({
-          field: 'description',
-          affected: 1,
-          oldValue: task.description,
-          newValue: newDescription,
-        });
       }
 
       if (newStatus !== undefined) {
         changes.status = newStatus;
-        results.push({
-          field: 'status',
-          affected: 1,
-          oldValue: task.status,
-          newValue: newStatus,
-        });
       }
 
-      if (results.length > 0) {
+      if (Object.keys(changes).length > 0) {
         const update = await repository.update(dto.id, changes);
+        
         if (update.affected !== 1) {
           throw new NotFoundException('Task was not found');
         }
       }
 
-      return [task, ...results];
+      if (Object.keys(changes).length === 0) return task;
+      
+      return repository.findOneByOrFail({ id: dto.id });
     });
   }
 

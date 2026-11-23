@@ -113,27 +113,20 @@ describe('Tasks (e2e, PostgreSQL)', () => {
       .expect([]);
   });
 
-  it('updates all fields and reports old and normalized new values', async () => {
+  it('returns the persisted task with all updated fields', async () => {
     const task = await create();
     const response = await api(app)
       .patch(`/tasks/${task.id}`)
       .send({ title: ' New ', description: '   ', status: 'DoNe' })
       .expect(200);
-    expect(response.body[0]).toMatchObject({
+    expect(response.body).toMatchObject({
       id: task.id,
-      title: 'Task',
-      status: 'todo',
+      title: 'New',
+      description: null,
+      status: 'done',
     });
-    expect(response.body.slice(1)).toEqual([
-      { field: 'title', affected: 1, oldValue: 'Task', newValue: 'New' },
-      {
-        field: 'description',
-        affected: 1,
-        oldValue: 'Description',
-        newValue: null,
-      },
-      { field: 'status', affected: 1, oldValue: 'todo', newValue: 'done' },
-    ]);
+    const fetched = await api(app).get(`/tasks/${task.id}`).expect(200);
+    expect(response.body).toEqual(fetched.body);
     expect(await repository().findOneByOrFail({ id: task.id })).toMatchObject({
       title: 'New',
       description: null,
@@ -250,25 +243,26 @@ describe('Tasks (e2e, PostgreSQL)', () => {
     expect(await repository().findOneByOrFail({ id: task.id })).toEqual(before);
   });
 
-  it('serializes concurrent updates and reports the preceding committed status', async () => {
+  it('returns each concurrent update result without changing omitted fields', async () => {
     const task = await create();
     const responses = await Promise.all(
       ['done', 'in_progress'].map((status) =>
         api(app).patch(`/tasks/${task.id}`).send({ status }).expect(200),
       ),
     );
-    const changes = responses.map((response) =>
-      response.body.find(
-        (entry: { field?: string }) => entry.field === 'status',
-      ),
-    );
-    const first = changes.find((change) => change.oldValue === 'todo');
-    const second = changes.find((change) => change.oldValue !== 'todo');
-    expect(first).toBeDefined();
-    expect(second).toBeDefined();
-    expect(second.oldValue).toBe(first.newValue);
-    expect((await repository().findOneByOrFail({ id: task.id })).status).toBe(
-      second.newValue,
+    expect(responses.map((response) => response.body.status).sort()).toEqual([
+      'done',
+      'in_progress',
+    ]);
+    for (const response of responses) {
+      expect(response.body).toMatchObject({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+      });
+    }
+    expect(['done', 'in_progress']).toContain(
+      (await repository().findOneByOrFail({ id: task.id })).status,
     );
   });
 });
