@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   Patch,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ProjectsService } from './projects.service';
@@ -53,6 +54,7 @@ export class ProjectsController {
     return await this.projectsService.update({ ...patchProjectDto, id });
   }
 
+  @HttpCode(204)
   @Delete(':id')
   async delete(@Param('id', new ParseUUIDPipe) id: string) {
     return await this.projectsService.delete(id);

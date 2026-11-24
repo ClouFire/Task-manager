@@ -11,7 +11,7 @@ import { Task } from './task.entity';
 import { Repository, QueryFailedError } from 'typeorm';
 import { ProjectsService } from '../projects/projects.service';
 import { PatchTaskDto } from './dto/patch-task.dto';
-import { DeleteResult } from 'typeorm/browser';
+import { DeleteResult } from 'typeorm';
 
 @Injectable()
 export class TasksService {

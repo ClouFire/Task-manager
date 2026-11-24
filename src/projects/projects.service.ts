@@ -8,10 +8,10 @@ import { plainToInstance } from 'class-transformer';
 import { isUUID, validate } from 'class-validator';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { Project } from './projects.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PatchProjectDto } from './dto/patch-project.dto';
-import { DeleteResult } from 'typeorm/browser';
+import { DeleteResult } from 'typeorm';
 import { Task } from '../tasks/task.entity';
 
 @Injectable()
@@ -64,7 +64,7 @@ export class ProjectsService {
 
     return this.projectRepository.manager.transaction(async (manager) => {
       const repository = manager.getRepository(Project);
-      
+
       const project = await repository.findOne({
         where: { id },
         lock: { mode: 'pessimistic_write' },
@@ -88,10 +88,18 @@ export class ProjectsService {
       throw new BadRequestException('Invalid project data');
     }
 
+    const isProject = await this.projectRepository.existsBy({ id });
+
+    if (!isProject) {
+      throw new NotFoundException('Project was not found');
+    }
+
     const hasTasks = await this.taskRepository.existsBy({ projectId: id });
 
     if (hasTasks) {
-      throw new ConflictException('Unable to delte project with existing tasks');
+      throw new ConflictException(
+        'Unable to delete project with existing tasks',
+      );
     }
 
     try {
@@ -103,7 +111,16 @@ export class ProjectsService {
 
       return result;
     } catch (error) {
-      throw new ConflictException('Unable to delete project due to database restrictions');
+      if (
+        error instanceof QueryFailedError &&
+        error.driverError.code === '23503' &&
+        error.driverError.constraint === 'FK_task_project'
+      ) {
+        throw new ConflictException(
+          'Unable to delete project with existing tasks',
+        );
+      }
+      throw error;
     }
   }
 }
