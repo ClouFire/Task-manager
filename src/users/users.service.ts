@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { hash, argon2id} from 'argon2';
 
 @Injectable()
 export class UsersService {
@@ -25,10 +26,12 @@ export class UsersService {
             throw new BadRequestException('Wrong data provided');
         }
 
+        const passwordHash = await hash(input.password, { type: argon2id });
+
         try {
             const user = this.userRepository.create({
                 email: input.email,
-                passwordHash: input.password,
+                passwordHash,
             });
 
             return await this.userRepository.save(user);
