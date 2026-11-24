@@ -11,6 +11,7 @@ import { Task } from './task.entity';
 import { Repository, QueryFailedError } from 'typeorm';
 import { ProjectsService } from '../projects/projects.service';
 import { PatchTaskDto } from './dto/patch-task.dto';
+import { DeleteResult } from 'typeorm/browser';
 
 @Injectable()
 export class TasksService {
@@ -141,7 +142,7 @@ export class TasksService {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<DeleteResult> {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid task data');
     }

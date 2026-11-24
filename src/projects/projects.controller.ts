@@ -9,6 +9,7 @@ import {
   ClassSerializerInterceptor,
   UseInterceptors,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ProjectsService } from './projects.service';
@@ -50,5 +51,10 @@ export class ProjectsController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<Project> {
     return await this.projectsService.update({ ...patchProjectDto, id });
+  }
+
+  @Delete(':id')
+  async delete(@Param('id', new ParseUUIDPipe) id: string) {
+    return await this.projectsService.delete(id);
   }
 }

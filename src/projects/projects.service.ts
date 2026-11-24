@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,12 +11,17 @@ import { Project } from './projects.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PatchProjectDto } from './dto/patch-project.dto';
+import { DeleteResult } from 'typeorm/browser';
+import { Task } from '../tasks/task.entity';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
+
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
   ) {}
 
   create(dto: CreateProjectDto): Promise<Project> {
@@ -75,5 +81,29 @@ export class ProjectsService {
       await repository.update(id, changes);
       return repository.findOneByOrFail({ id });
     });
+  }
+
+  async delete(id: string): Promise<DeleteResult> {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid project data');
+    }
+
+    const hasTasks = await this.taskRepository.existsBy({ projectId: id });
+
+    if (hasTasks) {
+      throw new ConflictException('Unable to delte project with existing tasks');
+    }
+
+    try {
+      const result = await this.projectRepository.delete({ id });
+
+      if (result.affected === 0) {
+        throw new NotFoundException('Project was not found');
+      }
+
+      return result;
+    } catch (error) {
+      throw new ConflictException('Unable to delete project due to database restrictions');
+    }
   }
 }
